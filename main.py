@@ -1,3 +1,5 @@
+import os
+
 from google import genai
 from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
@@ -6,13 +8,13 @@ import sys
 topic = "Elon Musk"  # input("Topic: ")
 aiprompt = "summarize these posts: "  # input("Action: ")
 latestDayPosts = []
-genaiClient = genai.Client(api_key="")
+genaiClient = genai.Client(api_key=os.environ['GENAIKEY'])
 
 
 def main() -> None:
 
     client = Client()
-    client.login('5tasiu.bsky.social', '')
+    client.login('5tasiu.bsky.social', os.environ['BSKYPASS'])
 
     #  print('Home (Following):\n')
 
