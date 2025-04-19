@@ -44,4 +44,5 @@ class PostSummarizer:
 if __name__ == '__main__':
     summarizer = PostSummarizer()
     posts = summarizer.get_latest_posts("UCL")
-    summarizer.generate_response(posts)
+    if len(posts) >= 0:
+        summarizer.generate_response(posts)
