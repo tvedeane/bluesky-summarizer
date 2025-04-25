@@ -2,6 +2,7 @@ import os
 from google import genai
 from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
+from flask import Flask, jsonify, make_response
 
 
 class PostSummarizer:
@@ -36,13 +37,39 @@ class PostSummarizer:
         reply = self.genai_client.models.generate_content(
             model="gemini-2.0-flash", contents=f"{ai_prompt} {latest_posts}"
         )
-        print(reply.text)
-        with open("responses.txt", "a") as f:
-            print(reply.text, file=f)
+        return reply.text
 
 
-if __name__ == '__main__':
-    summarizer = PostSummarizer()
-    posts = summarizer.get_latest_posts("UCL")
+global_summarizer = None
+
+
+def get_summarizer():
+    global global_summarizer
+    if global_summarizer is None:
+        global_summarizer = PostSummarizer()
+    return global_summarizer
+
+
+# For testing purposes - allows injection of mock summarizer
+def set_summarizer(custom_summarizer):
+    global global_summarizer
+    global_summarizer = custom_summarizer
+
+
+app = Flask(__name__)
+
+
+@app.route("/summary/<topic>")
+def summarize_ai(topic):
+    summarizer = get_summarizer()
+    posts = summarizer.get_latest_posts(topic)
+    summary = ""
     if len(posts) >= 0:
-        summarizer.generate_response(posts)
+        summary = summarizer.generate_response(posts)
+        print(summary)
+
+    response_body = {
+        "topic": topic,
+        "summary": summary
+    }
+    return make_response(jsonify(response_body), 200)
