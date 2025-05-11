@@ -13,11 +13,15 @@ class PostSummarizer:
         if not genai_key and not genai_client:
             raise ValueError("GENAIKEY environment variable is not set")
         self.genai_client = genai_client or genai.Client(api_key=genai_key)
+
+        bsky_login = os.environ.get('BSKYLOGIN')
+        if not bsky_login and not bsky_client:
+            raise ValueError("BSKYLOGIN environment variable is not set")
         bsky_key = os.environ.get('BSKYPASS')
         if not bsky_key and not bsky_client:
             raise ValueError("BSKYPASS environment variable is not set")
         self.bsky_client = bsky_client or Client()
-        self.bsky_client.login('5tasiu.bsky.social', bsky_key)
+        self.bsky_client.login(bsky_login, bsky_key)
 
     def get_latest_posts(self, topic=Elon_Musk):
         latest_day_posts = []
