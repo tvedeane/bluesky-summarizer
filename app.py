@@ -3,6 +3,7 @@ from google import genai
 from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
 from flask import Flask, jsonify, make_response
+from flask_cors import CORS
 
 
 class PostSummarizer:
@@ -61,6 +62,7 @@ def set_summarizer(custom_summarizer):
 
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/summary/<topic>")
