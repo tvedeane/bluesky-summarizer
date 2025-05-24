@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 import json
 
-from main import app, PostSummarizer, set_summarizer
+from app import app, PostSummarizer, set_summarizer
 
 
 class TestPostSummarizer(unittest.TestCase):
@@ -42,7 +42,7 @@ class TestPostSummarizer(unittest.TestCase):
             contents="summarize these posts:  ['[New Post] Test User 1: This is a test post about Elon Musk', '[New Post] Test User 2: Another test post about Elon Musk']")
         self.assertEqual(summary, "Summary of posts")
 
-    def test_clients(self):
+    def test_env_variables(self):
         genai_mock = MagicMock()
         bsky_mock = MagicMock()
 
@@ -52,9 +52,9 @@ class TestPostSummarizer(unittest.TestCase):
 
         with self.assertRaises(ValueError) as context:
             PostSummarizer(genai_mock, None)
-        self.assertEqual(str(context.exception), "BSKYPASS environment variable is not set")
+        self.assertEqual(str(context.exception), "BSKYLOGIN environment variable is not set")
 
-    def test_response(self):
+    def test_ai_not_called_without_posts(self):
         genai_mock = MagicMock()
         bsky_mock = MagicMock()
         mock_search_posts = MagicMock()
