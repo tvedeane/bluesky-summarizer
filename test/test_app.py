@@ -2,6 +2,8 @@ import unittest
 from unittest.mock import MagicMock
 import json
 
+from google.genai.errors import ServerError
+
 from app import app, PostSummarizer, set_summarizer
 
 
@@ -35,11 +37,12 @@ class TestPostSummarizer(unittest.TestCase):
 
         summarizer_test = PostSummarizer(genai_mock, bsky_mock)
         posts = summarizer_test.get_latest_posts("UCL")
-        summary = summarizer_test.generate_response(posts)
+        summary = summarizer_test.call_ai(posts)
 
         genai_mock.models.generate_content.assert_called_with(
             model='gemini-2.0-flash',
-            contents="summarize these posts:  ['[New Post] Test User 1: This is a test post about Elon Musk', '[New Post] Test User 2: Another test post about Elon Musk']")
+            contents="summarize these posts:  ['[New Post] Test User 1: This is a test post about Elon Musk', "
+                     "'[New Post] Test User 2: Another test post about Elon Musk']")
         self.assertEqual(summary, "Summary of posts")
 
     def test_env_variables(self):
@@ -61,9 +64,24 @@ class TestPostSummarizer(unittest.TestCase):
         mock_search_posts.posts = []
         summarizer_test = PostSummarizer(genai_mock, bsky_mock)
         posts = summarizer_test.get_latest_posts("UCL")
-        summarizer_test.generate_response(posts)
+        summarizer_test.call_ai(posts)
 
         genai_mock.models.generate_response.assert_not_called()
+
+    def test_ai_call_retried_when_error(self):
+        genai_mock, bsky_mock = self.setup_mocks()
+
+        genai_mock.models.generate_content.side_effect = [
+            ServerError(code=502, response_json=MagicMock(), response=""),
+            MagicMock(text="Summary of posts")
+        ]
+
+        summarizer_test = PostSummarizer(genai_mock, bsky_mock)
+        posts = summarizer_test.get_latest_posts("UCL")
+        summary = summarizer_test.call_ai(posts)
+
+        self.assertEqual(genai_mock.models.generate_content.call_count, 2)
+        self.assertEqual(summary, "Summary of posts")
 
     def test_json_response(self):
         genai_mock, bsky_mock = self.setup_mocks()

@@ -4,6 +4,7 @@ from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
 from flask import Flask, jsonify, make_response
 from flask_cors import CORS
+from retry import retry
 
 
 class PostSummarizer:
@@ -37,7 +38,9 @@ class PostSummarizer:
             latest_day_posts.append(f'[{action}] {author.display_name}: {post.text}')
         return latest_day_posts
 
-    def generate_response(self, latest_posts):
+    @retry(tries=3, delay=3, backoff=2)  # retry after 3 and 6 seconds
+    def call_ai(self, latest_posts):
+        print("calling ai...")
         ai_prompt = "summarize these posts: "  # input("Action: ")
         reply = self.genai_client.models.generate_content(
             model="gemini-2.0-flash", contents=f"{ai_prompt} {latest_posts}"
@@ -71,7 +74,7 @@ def summarize_ai(topic):
     posts = summarizer.get_latest_posts(topic)
     summary = ""
     if len(posts) >= 0:
-        summary = summarizer.generate_response(posts)
+        summary = summarizer.call_ai(posts)
         print(summary)
 
     response_body = {
