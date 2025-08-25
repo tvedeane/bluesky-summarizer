@@ -6,6 +6,7 @@ from flask import Flask, jsonify, make_response
 from flask_cors import CORS
 from retry import retry
 from dotenv import load_dotenv
+import libsql
 
 # Load environment variables from .env file
 load_dotenv()
@@ -68,8 +69,38 @@ def set_summarizer(custom_summarizer):
     global_summarizer = custom_summarizer
 
 
+class Database:
+    def __init__(self):
+        url = os.getenv("TURSO_DATABASE_URL")
+        auth_token = os.getenv("TURSO_AUTH_TOKEN")
+
+        self.conn = libsql.connect("bluesky-summarizer", sync_url=url, auth_token=auth_token)
+        self.conn.sync()
+
+    def register_new_topic(self, email, topic):
+        user = self.conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        print(user)
+        if user is not None:
+            self.conn.execute(
+                "INSERT INTO  registered_topics (user_id, topic) VALUES (?, ?)",
+                (user[0], topic,)
+            )
+            self.conn.commit()
+
+
 app = Flask(__name__)
 CORS(app)
+db = Database()
+
+
+@app.route("/<email>/<topic>")
+def register_new_topic(email, topic):
+    db.register_new_topic(email, topic)
+    return make_response("ok", 200)
 
 
 @app.route("/summary/<topic>")
