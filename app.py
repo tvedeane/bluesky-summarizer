@@ -103,7 +103,7 @@ db = Database()
 # -Body '{"email": "test2", "topic": "test"}' `
 # -ContentType "application/json"
 def hello():
-    return register_new_topic(request.form.get("email"), request.form.get("topic"))
+    return register_new_topic(request.get_json().get("email"), request.get_json().get("topic"))
 
 
 def register_new_topic(email, topic):
