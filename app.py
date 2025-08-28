@@ -2,7 +2,7 @@ import os
 from google import genai
 from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
-from flask import Flask, jsonify, make_response
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 from retry import retry
 from dotenv import load_dotenv
@@ -97,10 +97,18 @@ CORS(app)
 db = Database()
 
 
-@app.route("/<email>/<topic>")
+@app.post("/topic/register")
+# Invoke-RestMethod -Uri "http://127.0.0.1:5000/topic/register" `
+# -Method POST `
+# -Body '{"email": "test2", "topic": "test"}' `
+# -ContentType "application/json"
+def hello():
+    return register_new_topic(request.form.get("email"), request.form.get("topic"))
+
+
 def register_new_topic(email, topic):
     db.register_new_topic(email, topic)
-    return make_response("ok", 200)
+    return make_response("Topic successfully registered", 200)
 
 
 @app.route("/summary/<topic>")
