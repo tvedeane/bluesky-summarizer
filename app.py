@@ -117,7 +117,7 @@ def register_topic_endpoint():
 
 def register_new_topic(email, topic):
     if db.save_topic(email, topic):
-        return make_response("Topic successfully registered", 204)
+        return make_response(jsonify("Topic successfully registered"), 204)
     return jsonify(error="Server Error", message="Server Error"), 500
 
 
