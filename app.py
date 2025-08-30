@@ -2,11 +2,12 @@ import os
 from google import genai
 from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, make_response, request, abort
 from flask_cors import CORS
 from retry import retry
 from dotenv import load_dotenv
 import libsql
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -77,19 +78,24 @@ class Database:
         self.conn = libsql.connect("bluesky-summarizer", sync_url=url, auth_token=auth_token)
         self.conn.sync()
 
-    def register_new_topic(self, email, topic):
-        user = self.conn.execute(
-            "SELECT * FROM users WHERE email = ?",
-            (email,)
-        ).fetchone()
+    def save_topic(self, email, topic):
+        try:
+            user = self.conn.execute(
+                "SELECT * FROM users WHERE email = ?",
+                (email,)
+            ).fetchone()
 
-        print(user)
-        if user is not None:
-            self.conn.execute(
-                "INSERT INTO  registered_topics (user_id, topic) VALUES (?, ?)",
-                (user[0], topic,)
-            )
-            self.conn.commit()
+            if user is not None:
+                self.conn.execute(
+                    "INSERT INTO  registered_topics (user_id, topic) VALUES (?, ?)",
+                    (user[0], topic,)
+                )
+                self.conn.commit()
+                return True
+            return False
+        except ValueError as e:
+            print("Error saving topic: ", e)
+            return False
 
 
 app = Flask(__name__)
@@ -102,13 +108,17 @@ db = Database()
 # -Method POST `
 # -Body '{"email": "test2", "topic": "test"}' `
 # -ContentType "application/json"
-def hello():
-    return register_new_topic(request.get_json().get("email"), request.get_json().get("topic"))
+def register_topic_endpoint():
+    json = request.get_json()
+    if not json.get("email") or not json.get("topic"):
+        return jsonify(error="Bad request", message="missing either email, topic or both"), 400
+    return register_new_topic(json.get("email"), json.get("topic"))
 
 
 def register_new_topic(email, topic):
-    db.register_new_topic(email, topic)
-    return make_response("Topic successfully registered", 200)
+    if db.save_topic(email, topic):
+        return make_response("Topic successfully registered", 204)
+    return jsonify(error="Server Error", message="Server Error"), 500
 
 
 @app.route("/summary/<topic>")
