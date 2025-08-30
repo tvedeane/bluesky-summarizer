@@ -103,7 +103,7 @@ CORS(app)
 db = Database()
 
 
-@app.post("/topic/register")
+@app.route("/topic/register", methods=["POST"])
 # Invoke-RestMethod -Uri "http://127.0.0.1:5000/topic/register" `
 # -Method POST `
 # -Body '{"email": "test2", "topic": "test"}' `
@@ -117,7 +117,11 @@ def register_topic_endpoint():
 
 def register_new_topic(email, topic):
     if db.save_topic(email, topic):
-        return make_response(jsonify("Topic successfully registered"), 204)
+        response_body = {
+            "topic": topic,
+            "summary": "Topic successfully registered"
+        }
+        return jsonify(message=response_body), 201
     return jsonify(error="Server Error", message="Server Error"), 500
 
 
