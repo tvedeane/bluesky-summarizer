@@ -75,16 +75,28 @@ class Database:
         url = os.getenv("TURSO_DATABASE_URL")
         auth_token = os.getenv("TURSO_AUTH_TOKEN")
 
-        self.conn = libsql.connect("bluesky-summarizer", sync_url=url, auth_token=auth_token)
+        self.conn = libsql.connect("summarizer", sync_url=url, auth_token=auth_token)
         self.conn.sync()
+
+    def user(self, email):
+        user = self.conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+        return user
+
+    def topic_already_followed(self, email, topic):
+        topics_count = self.conn.execute(
+            "SELECT COUNT(*) FROM users JOIN registered_topics ON users.id = registered_topics.user_id "
+            "where email = ? and topic = ?",
+            (email, topic, )
+        ).fetchone()
+
+        return topics_count[0] != 0
 
     def save_topic(self, email, topic):
         try:
-            user = self.conn.execute(
-                "SELECT * FROM users WHERE email = ?",
-                (email,)
-            ).fetchone()
-
+            user = self.user(email)
             if user is not None:
                 self.conn.execute(
                     "INSERT INTO  registered_topics (user_id, topic) VALUES (?, ?)",
@@ -116,6 +128,8 @@ def register_topic_endpoint():
 
 
 def register_new_topic(email, topic):
+    if db.topic_already_followed(email, topic):
+        return jsonify(message="You cannot follow the same topic twice"), 400
     if db.save_topic(email, topic):
         response_body = {
             "topic": topic,
