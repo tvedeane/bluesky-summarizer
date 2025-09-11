@@ -2,7 +2,7 @@ import os
 from google import genai
 from atproto import Client
 from atproto_client.models.app.bsky.feed.search_posts import Params
-from flask import Flask, jsonify, make_response, request, abort
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 from retry import retry
 from dotenv import load_dotenv
@@ -88,7 +88,7 @@ class Database:
     def topic_already_followed(self, email, topic):
         topics_count = self.conn.execute(
             "SELECT COUNT(*) FROM users JOIN registered_topics ON users.id = registered_topics.user_id "
-            "where email = ? and topic = ?",
+            "WHERE email = ? AND topic = ?",
             (email, topic, )
         ).fetchone()
 
@@ -110,9 +110,24 @@ class Database:
             return False
 
 
+global_db = None
+
+
+def get_db():
+    global global_db
+    if global_db is None:
+        global_db = Database()
+    return global_db
+
+
+# For testing purposes - allows injection of mock database
+def set_db(custom_db):
+    global global_db
+    global_db = custom_db
+
+
 app = Flask(__name__)
 CORS(app)
-db = Database()
 
 
 @app.route("/topic/register", methods=["POST"])
@@ -128,6 +143,7 @@ def register_topic_endpoint():
 
 
 def register_new_topic(email, topic):
+    db = get_db()
     if db.topic_already_followed(email, topic):
         return jsonify(message="You cannot follow the same topic twice"), 400
     if db.save_topic(email, topic):

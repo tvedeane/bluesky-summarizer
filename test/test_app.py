@@ -4,7 +4,7 @@ import json
 
 from google.genai.errors import ServerError
 
-from bluesky_summarizer import app, PostSummarizer, set_summarizer
+from bluesky_summarizer import app, PostSummarizer, set_summarizer, set_db
 
 
 class TestPostSummarizer(unittest.TestCase):
@@ -31,6 +31,14 @@ class TestPostSummarizer(unittest.TestCase):
         mock_search_posts.posts = [mock_post1, mock_post2]
 
         return genai_mock, bsky_mock
+
+    @staticmethod
+    def setup_db_mock():
+        db_mock = MagicMock()
+        db_mock.user.return_value = (1, "test@example.com")  # Mock user with id=1
+        db_mock.topic_already_followed.return_value = False
+        db_mock.save_topic.return_value = True
+        return db_mock
 
     def test_get_posts_with_mocks(self):
         genai_mock, bsky_mock = self.setup_mocks()
@@ -91,3 +99,29 @@ class TestPostSummarizer(unittest.TestCase):
         data = json.loads(response.data)
         self.assertEqual("Summary of posts", data["summary"])
         self.assertEqual("Elon Musk", data["topic"])
+
+    def test_register_new_topic_wrong_input(self):
+        genai_mock, bsky_mock = self.setup_mocks()
+        db_mock = self.setup_db_mock()
+
+        set_summarizer(PostSummarizer(genai_mock, bsky_mock))
+        set_db(db_mock)
+        response = self.app.post('/topic/register', json={"name": "Flask"})
+        self.assertEqual(400, response.status_code)
+        db_mock.topic_already_followed.assert_not_called()
+        db_mock.save_topic.assert_not_called()
+
+    def test_register_new_topic(self):
+        genai_mock, bsky_mock = self.setup_mocks()
+        db_mock = self.setup_db_mock()
+
+        set_summarizer(PostSummarizer(genai_mock, bsky_mock))
+        set_db(db_mock)
+        response = self.app.post('/topic/register', json={
+                        "email": "flask@python.io",
+                        "topic": "Guido",
+                    })
+        self.assertEqual(201, response.status_code)
+        self.assertIn('Guido', response.get_data(as_text=True))
+        db_mock.topic_already_followed.assert_called_with('flask@python.io', 'Guido')
+        db_mock.save_topic.assert_called_with('flask@python.io', 'Guido')
