@@ -17,9 +17,10 @@ A Flask-based web service that collects posts from Bluesky on a given topic and 
 ### Prerequisites
 
 - Python 3.11+
-- Poetry (for dependency management)
+- uv (for building and dependency management)
 - Bluesky account credentials
 - Google Gemini API key
+- Database on Turso
 
 ### Local Development
 
@@ -31,7 +32,7 @@ A Flask-based web service that collects posts from Bluesky on a given topic and 
 
 2. **Install dependencies**
    ```bash
-   poetry install
+   uv sync
    ```
 
 3. **Set up environment variables**
@@ -47,7 +48,7 @@ A Flask-based web service that collects posts from Bluesky on a given topic and 
 
 4. **Run the application**
    ```bash
-   poetry run flask --app app run
+   uv run python bluesky_summarizer.py
    ```
 
 The application will be available at `http://localhost:5000`
@@ -80,12 +81,7 @@ curl "http://localhost:5000/summary/Elon%20Musk"
 
 Run the test suite:
 ```bash
-poetry run python -m pytest test/
-```
-
-Or run with unittest:
-```bash
-poetry run python -m unittest test.test_app
+uv run pytest
 ```
 
 ## 🐳 Docker Deployment

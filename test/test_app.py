@@ -4,7 +4,7 @@ import json
 
 from google.genai.errors import ServerError
 
-from app import app, PostSummarizer, set_summarizer
+from bluesky_summarizer import app, PostSummarizer, set_summarizer
 
 
 class TestPostSummarizer(unittest.TestCase):
