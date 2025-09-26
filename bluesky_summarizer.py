@@ -8,7 +8,6 @@ from retry import retry
 from dotenv import load_dotenv
 import libsql
 
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -78,19 +77,23 @@ class Database:
         self.conn = libsql.connect("summarizer", sync_url=url, auth_token=auth_token)
         self.conn.sync()
 
-    def user(self, email):
+    def user(self, email: str):
+        self.conn.execute(
+            "INSERT OR IGNORE INTO users (email) VALUES (?);",
+            (email,)
+        )
+        self.conn.commit()
         user = self.conn.execute(
-            "SELECT * FROM users WHERE email = ?",
+            "SELECT * FROM users WHERE email = ?;",
             (email,)
         ).fetchone()
-        #if user is none insert into users
         return user
 
     def topic_already_followed(self, email, topic):
         topics_count = self.conn.execute(
             "SELECT COUNT(*) FROM users JOIN registered_topics ON users.id = registered_topics.user_id "
             "WHERE email = ? AND topic = ?",
-            (email, topic, )
+            (email, topic,)
         ).fetchone()
 
         return topics_count[0] != 0
@@ -177,4 +180,3 @@ def summarize_ai(topic):
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000)
-
