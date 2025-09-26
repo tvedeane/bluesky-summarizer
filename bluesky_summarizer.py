@@ -83,6 +83,7 @@ class Database:
             "SELECT * FROM users WHERE email = ?",
             (email,)
         ).fetchone()
+        #if user is none insert into users
         return user
 
     def topic_already_followed(self, email, topic):
@@ -139,6 +140,7 @@ def register_topic_endpoint():
     json = request.get_json()
     if not json.get("email") or not json.get("topic"):
         return jsonify(error="Bad request", message="missing either email, topic or both"), 400
+
     return register_new_topic(json.get("email"), json.get("topic"))
 
 
@@ -159,13 +161,20 @@ def register_new_topic(email, topic):
 def summarize_ai(topic):
     summarizer = get_summarizer()
     posts = summarizer.get_latest_posts(topic)
-    summary = ""
-    if len(posts) >= 0:
+    print(len(posts))
+    if len(posts) > 0:
         summary = summarizer.call_ai(posts)
-        print(summary)
+    else:
+        summary = "No posts have been found on this subject of matter"
+    print(summary)
 
     response_body = {
         "topic": topic,
         "summary": summary
     }
     return make_response(jsonify(response_body), 200)
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5000)
+
