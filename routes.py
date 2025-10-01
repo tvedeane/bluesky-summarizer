@@ -20,9 +20,6 @@ def get_db():
     return global_db
 
 
-db = get_db()
-
-
 # For testing purposes - allows injection of mock database
 def set_db(custom_db):
     global global_db
@@ -46,9 +43,9 @@ def set_summarizer(custom_summarizer):
 
 
 def register_new_topic(email, topic):
-    if db.topic_already_followed(email, topic):
+    if get_db().topic_already_followed(email, topic):
         return jsonify(message="You cannot follow the same topic twice"), 400
-    if db.save_topic(email, topic):
+    if get_db().save_topic(email, topic):
         response_body = {
             "topic": topic,
             "summary": "Topic successfully registered"
