@@ -4,7 +4,9 @@ import json
 
 from google.genai.errors import ServerError
 
-from bluesky_summarizer import app, PostSummarizer, set_summarizer, set_db
+from bluesky_summarizer import app
+from routes import set_db, set_summarizer
+from post_summarizer import PostSummarizer
 
 
 class TestPostSummarizer(unittest.TestCase):
@@ -118,9 +120,9 @@ class TestPostSummarizer(unittest.TestCase):
         set_summarizer(PostSummarizer(genai_mock, bsky_mock))
         set_db(db_mock)
         response = self.app.post('/topic/register', json={
-                        "email": "flask@python.io",
-                        "topic": "Guido",
-                    })
+            "email": "flask@python.io",
+            "topic": "Guido",
+        })
         self.assertEqual(201, response.status_code)
         self.assertIn('Guido', response.get_data(as_text=True))
         db_mock.topic_already_followed.assert_called_with('flask@python.io', 'Guido')
