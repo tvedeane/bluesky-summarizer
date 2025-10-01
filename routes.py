@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, make_response, request, g
 from flask_cors import CORS
 
 from post_summarizer import PostSummarizer
@@ -10,36 +10,17 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-global_db = None
-
 
 def get_db():
-    global global_db
-    if global_db is None:
-        global_db = Database()
-    return global_db
-
-
-# For testing purposes - allows injection of mock database
-def set_db(custom_db):
-    global global_db
-    global_db = custom_db
-
-
-global_summarizer = None
+    if 'db' not in g:
+        g.db = Database()
+    return g.db
 
 
 def get_summarizer():
-    global global_summarizer
-    if global_summarizer is None:
-        global_summarizer = PostSummarizer()
-    return global_summarizer
-
-
-# For testing purposes - allows injection of mock summarizer
-def set_summarizer(custom_summarizer):
-    global global_summarizer
-    global_summarizer = custom_summarizer
+    if 'summarizer' not in g:
+        g.summarizer = PostSummarizer()
+    return g.summarizer
 
 
 def register_new_topic(email, topic):

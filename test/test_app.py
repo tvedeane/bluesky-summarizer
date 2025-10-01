@@ -1,11 +1,10 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import json
 
 from google.genai.errors import ServerError
 
 from bluesky_summarizer import app
-from routes import set_db, set_summarizer
 from post_summarizer import PostSummarizer
 
 
@@ -93,32 +92,37 @@ class TestPostSummarizer(unittest.TestCase):
         self.assertEqual(genai_mock.models.generate_content.call_count, 2)
         self.assertEqual(summary, "Summary of posts")
 
-    def test_json_response(self):
+    @patch('routes.get_summarizer')
+    def test_json_response(self, mock_get_summarizer):
         genai_mock, bsky_mock = self.setup_mocks()
+        mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock)
 
-        set_summarizer(PostSummarizer(genai_mock, bsky_mock))
         response = self.app.get('/summary/Elon%20Musk')
         data = json.loads(response.data)
         self.assertEqual("Summary of posts", data["summary"])
         self.assertEqual("Elon Musk", data["topic"])
 
-    def test_register_new_topic_wrong_input(self):
+    @patch('routes.get_summarizer')
+    @patch('routes.get_db')
+    def test_register_new_topic_wrong_input(self, mock_get_db, mock_get_summarizer):
         genai_mock, bsky_mock = self.setup_mocks()
         db_mock = self.setup_db_mock()
+        mock_get_db.return_value = db_mock
+        mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock)
 
-        set_summarizer(PostSummarizer(genai_mock, bsky_mock))
-        set_db(db_mock)
         response = self.app.post('/topic/register', json={"name": "Flask"})
         self.assertEqual(400, response.status_code)
         db_mock.topic_already_followed.assert_not_called()
         db_mock.save_topic.assert_not_called()
 
-    def test_register_new_topic(self):
+    @patch('routes.get_summarizer')
+    @patch('routes.get_db')
+    def test_register_new_topic(self, mock_get_db, mock_get_summarizer):
         genai_mock, bsky_mock = self.setup_mocks()
         db_mock = self.setup_db_mock()
+        mock_get_db.return_value = db_mock
+        mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock)
 
-        set_summarizer(PostSummarizer(genai_mock, bsky_mock))
-        set_db(db_mock)
         response = self.app.post('/topic/register', json={
             "email": "flask@python.io",
             "topic": "Guido",
