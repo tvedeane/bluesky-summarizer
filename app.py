@@ -5,6 +5,10 @@ from atproto_client.models.app.bsky.feed.search_posts import Params
 from flask import Flask, jsonify, make_response
 from flask_cors import CORS
 from retry import retry
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class PostSummarizer:
