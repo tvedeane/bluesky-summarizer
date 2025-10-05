@@ -50,17 +50,27 @@ def register_topic_endpoint():
 
 @app.route("/summary/<topic>")
 def summarize_ai(topic):
-    summarizer = get_summarizer()
-    posts = summarizer.get_latest_posts(topic)
-    print(len(posts))
-    if len(posts) > 0:
-        summary = summarizer.call_ai(posts)
-    else:
-        summary = "No posts have been found on this subject of matter"
-    print(summary)
-
+    summary = get_summary(topic)
     response_body = {
         "topic": topic,
         "summary": summary
     }
     return make_response(jsonify(response_body), 200)
+
+
+def get_summary(topic):
+    summarizer = get_summarizer()
+    posts = summarizer.get_latest_posts(topic)
+    if len(posts) > 0:
+        summary = summarizer.call_ai(posts)
+    else:
+        summary = "No posts have been found on this subject of matter"
+    return summary
+
+
+@app.route("/trigger/summaries/send")
+def send_summaries():
+    for entry in get_db().get_users():
+        summary = get_summary(entry[1])
+        print("sending email to: ", entry[0], " ,topic: ", entry[1], ", summary: ", summary[0:20])
+    return make_response("", 200)

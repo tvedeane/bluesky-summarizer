@@ -131,3 +131,23 @@ class TestPostSummarizer(unittest.TestCase):
         self.assertIn('Guido', response.get_data(as_text=True))
         db_mock.topic_already_followed.assert_called_with('flask@python.io', 'Guido')
         db_mock.save_topic.assert_called_with('flask@python.io', 'Guido')
+
+    @patch('routes.get_summarizer')
+    @patch('routes.get_db')
+    def test_send_summaries(self, mock_get_db, mock_get_summarizer):
+        summarizer_mock = MagicMock()
+        mock_get_summarizer.return_value = summarizer_mock
+        db_mock = self.setup_db_mock()
+        db_mock.get_users.return_value = [
+            ("john@gmail.com", "Elon"),
+            ("Joe@gmail.com", "Donald")
+        ]
+
+        mock_get_db.return_value = db_mock
+
+        response = self.app.get('/trigger/summaries/send')
+        self.assertEqual(200, response.status_code)
+        summarizer_mock.get_latest_posts.assert_any_call("Elon")
+        summarizer_mock.get_latest_posts.assert_any_call("Donald")
+        #assert call ai
+        #assert sending email

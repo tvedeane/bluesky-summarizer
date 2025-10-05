@@ -10,7 +10,7 @@ class Database:
         self.conn = libsql.connect("summarizer", sync_url=url, auth_token=auth_token)
         self.conn.sync()
 
-    def user(self, email: str):
+    def get_user(self, email: str):
         self.conn.execute(
             "INSERT OR IGNORE INTO users (email) VALUES (?);",
             (email,)
@@ -21,6 +21,10 @@ class Database:
             (email,)
         ).fetchone()
         return user
+
+    def get_users(self):
+        return self.conn.execute("SELECT users.email, registered_topics.topic FROM users INNER JOIN registered_topics "
+                                 "ON users.id = registered_topics.user_id;").fetchall()
 
     def topic_already_followed(self, email, topic):
         topics_count = self.conn.execute(
@@ -33,7 +37,7 @@ class Database:
 
     def save_topic(self, email, topic):
         try:
-            user = self.user(email)
+            user = self.get_user(email)
             if user is not None:
                 self.conn.execute(
                     "INSERT INTO  registered_topics (user_id, topic) VALUES (?, ?)",
