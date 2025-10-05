@@ -36,28 +36,18 @@ A Flask-based web service that collects posts from Bluesky on a given topic and 
 
 3. **Set up environment variables**
    
-   Create a `.env` file or set the following environment variables:
+   Create a `.env` file in the project root with your API credentials:
    ```bash
-   export GENAIKEY="your-google-gemini-api-key"
-   export BSKYLOGIN="your-bluesky-username"
-   export BSKYPASS="your-bluesky-password"
+   GENAIKEY=your-google-gemini-api-key
+   BSKYLOGIN=your-bluesky-username
+   BSKYPASS=your-bluesky-password
    ```
-
-   **On Windows (PowerShell):**
-   ```powershell
-   $env:GENAIKEY="your-google-gemini-api-key"
-   $env:BSKYLOGIN="your-bluesky-username"
-   $env:BSKYPASS="your-bluesky-password"
-   ```
+   
+   > **Note**: The `.env` file is automatically ignored by git to keep your credentials secure.
 
 4. **Run the application**
    ```bash
    poetry run flask --app app run
-   ```
-
-   **On Windows:**
-   ```powershell
-   py -m flask --app app run
    ```
 
 The application will be available at `http://localhost:5000`
@@ -104,6 +94,13 @@ poetry run python -m unittest test.test_app
 ```bash
 docker build -t bluesky-summarizer .
 docker run -p 8080:8080 \
+  --env-file .env \
+  bluesky-summarizer
+```
+
+Or with individual environment variables:
+```bash
+docker run -p 8080:8080 \
   -e GENAIKEY="your-api-key" \
   -e BSKYLOGIN="your-username" \
   -e BSKYPASS="your-password" \
@@ -131,24 +128,29 @@ docker run -p 8080:8080 \
 
 ## 🔧 Configuration
 
-### Environment Variables
+All configuration is handled through a `.env` file in the project root. The application automatically loads these values on startup.
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GENAIKEY` | Google Gemini API key | Yes |
-| `BSKYLOGIN` | Bluesky username/handle | Yes |
-| `BSKYPASS` | Bluesky password | Yes |
+### Required Environment Variables
+
+Create a `.env` file with the following variables:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `GENAIKEY` | Google Gemini API key | `AIzaSyC...` |
+| `BSKYLOGIN` | Bluesky username/handle | `user.bsky.social` |
+| `BSKYPASS` | Bluesky password | `your-password` |
 
 ### API Keys Setup
 
 1. **Google Gemini API Key**: 
    - Visit [Google AI Studio](https://ai.google.dev/gemini-api/docs/quickstart)
    - Create a new API key
-   - Set the `GENAIKEY` environment variable
+   - Add it to your `.env` file as `GENAIKEY`
 
 2. **Bluesky Credentials**:
    - Use your Bluesky handle (e.g., `user.bsky.social`)
    - Use your account password or app-specific password
+   - Add them to your `.env` file as `BSKYLOGIN` and `BSKYPASS`
 
 ## 🏗️ Architecture
 
