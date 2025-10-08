@@ -1,14 +1,22 @@
 from flask import Flask, jsonify, make_response, request, g
 from flask_cors import CORS
+import os
 
 from post_summarizer import PostSummarizer
 from database import Database
 from dotenv import load_dotenv
+from mail_sender import MailSender
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+
+def get_mail_sender():
+    if 'mail_sender' not in g:
+        g.mail_sender = MailSender()
+    return g.mail_sender
 
 
 def get_db():
@@ -70,7 +78,11 @@ def get_summary(topic):
 
 @app.route("/trigger/summaries/send")
 def send_summaries():
+    key = request.args.get('key')
+    if key != os.environ.get('SENDING_KEY'):
+        return make_response("invalid key", 400)
     for entry in get_db().get_users():
         summary = get_summary(entry[1])
-        print("sending email to: ", entry[0], " ,topic: ", entry[1], ", summary: ", summary[0:20])
+        get_mail_sender().send_mail(entry[0], summary, entry[1])
+
     return make_response("", 200)
