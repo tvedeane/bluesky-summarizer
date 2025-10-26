@@ -1,3 +1,5 @@
+import os
+
 import unittest
 from unittest.mock import MagicMock, patch
 import json
@@ -132,9 +134,12 @@ class TestPostSummarizer(unittest.TestCase):
         db_mock.topic_already_followed.assert_called_with('flask@python.io', 'Guido')
         db_mock.save_topic.assert_called_with('flask@python.io', 'Guido')
 
+    @patch('routes.get_mail_sender')
     @patch('routes.get_summarizer')
     @patch('routes.get_db')
-    def test_send_summaries(self, mock_get_db, mock_get_summarizer):
+    def test_send_summaries(self, mock_get_db, mock_get_summarizer, mock_get_mail_sender):
+        mail_sender_mock = MagicMock()
+        mock_get_mail_sender.return_value = mail_sender_mock
         summarizer_mock = MagicMock()
         mock_get_summarizer.return_value = summarizer_mock
         db_mock = self.setup_db_mock()
@@ -144,10 +149,14 @@ class TestPostSummarizer(unittest.TestCase):
         ]
 
         mock_get_db.return_value = db_mock
+        with patch.dict(os.environ, {'SENDING_KEY': '123'}):
+            response = self.app.get('/trigger/summaries/send?key=123')
+            self.assertEqual(200, response.status_code)
+            summarizer_mock.get_latest_posts.assert_any_call("Elon")
+            summarizer_mock.get_latest_posts.assert_any_call("Donald")
+            #assert call ai
+            mail_sender_mock.send_mail.assert_any_call(
+                "john@gmail.com", "No posts have been found on this subject of matter", "Elon")
+            mail_sender_mock.send_mail.assert_any_call(
+                "Joe@gmail.com", "No posts have been found on this subject of matter", "Donald")
 
-        response = self.app.get('/trigger/summaries/send')
-        self.assertEqual(200, response.status_code)
-        summarizer_mock.get_latest_posts.assert_any_call("Elon")
-        summarizer_mock.get_latest_posts.assert_any_call("Donald")
-        #assert call ai
-        #assert sending email
