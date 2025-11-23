@@ -79,6 +79,8 @@ def get_summary(topic):
 @app.route("/trigger/summaries/send")
 def send_summaries():
     key = request.args.get('key')
+    print('Provided key: ', key)
+    print('System key: ', os.environ.get('SENDING_KEY'))
     if key != os.environ.get('SENDING_KEY'):
         return make_response("invalid key", 400)
     for entry in get_db().get_users():
