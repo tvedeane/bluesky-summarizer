@@ -42,6 +42,9 @@ A Flask-based web service that collects posts from Bluesky on a given topic and 
    GENAIKEY=your-google-gemini-api-key
    BSKYLOGIN=your-bluesky-username
    BSKYPASS=your-bluesky-password
+   SENDER_EMAIL=your-sender-email@example.com
+   MJ_APIKEY_PUBLIC=your-mailjet-public-key
+   MJ_APIKEY_PRIVATE=your-mailjet-private-key
    ```
    
    > **Note**: The `.env` file is automatically ignored by git to keep your credentials secure.
@@ -117,10 +120,13 @@ docker run -p 8080:8080 \
 
 3. **Set environment variables**
    ```bash
-   fly secrets set GENAIKEY="your-api-key"
-   fly secrets set BSKYLOGIN="your-username"
-   fly secrets set BSKYPASS="your-password"
-   ```
+    fly secrets set GENAIKEY="your-api-key"
+    fly secrets set BSKYLOGIN="your-username"
+    fly secrets set BSKYPASS="your-password"
+    fly secrets set SENDER_EMAIL="your-sender-email@example.com"
+    fly secrets set MJ_APIKEY_PUBLIC="your-mailjet-public-key"
+    fly secrets set MJ_APIKEY_PRIVATE="your-mailjet-private-key"
+    ```
 
 ## 🔧 Configuration
 
@@ -135,6 +141,9 @@ Create a `.env` file with the following variables:
 | `GENAIKEY` | Google Gemini API key | `AIzaSyC...` |
 | `BSKYLOGIN` | Bluesky username/handle | `user.bsky.social` |
 | `BSKYPASS` | Bluesky password | `your-password` |
+| `SENDER_EMAIL` | Email address for sending notifications | `noreply@example.com` |
+| `MJ_APIKEY_PUBLIC` | MailJet public API key | `your-public-key` |
+| `MJ_APIKEY_PRIVATE` | MailJet private API key | `your-private-key` |
 
 ### API Keys Setup
 
