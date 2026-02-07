@@ -9,7 +9,7 @@ from atproto_client.models.app.bsky.feed.search_posts import Params
 
 
 class PostSummarizer:
-    Elon_Musk = "Elon Musk"  # input("Topic: ")
+    Elon_Musk = "Elon Musk"
 
     def __init__(self, genai_client=None, bsky_client=None):
         genai_key = os.environ.get('GENAIKEY')
@@ -42,7 +42,7 @@ class PostSummarizer:
     @retry(tries=3, delay=3, backoff=2)  # retry after 3 and 6 seconds
     def call_ai(self, latest_posts):
         print("calling ai...")
-        ai_prompt = "summarize these posts: "  # input("Action: ")
+        ai_prompt = "summarize these posts: "
         reply = self.genai_client.models.generate_content(
             model="gemini-2.0-flash", contents=f"{ai_prompt} {latest_posts}"
         )

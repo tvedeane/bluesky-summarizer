@@ -44,10 +44,6 @@ def register_new_topic(email, topic):
 
 
 @app.route("/topic/register", methods=["POST"])
-# Invoke-RestMethod -Uri "http://127.0.0.1:5000/topic/register" `
-# -Method POST `
-# -Body '{"email": "test2", "topic": "test"}' `
-# -ContentType "application/json"
 def register_topic_endpoint():
     json = request.get_json()
     if not json.get("email") or not json.get("topic"):
