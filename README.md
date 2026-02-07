@@ -80,6 +80,25 @@ curl "http://localhost:5000/summary/Elon%20Musk"
 }
 ```
 
+### Trigger Summary Emails
+
+**Endpoint:** `GET /trigger/summaries/send`
+
+**Description:** Triggers the sending of summary emails to all registered users. Requires API key authentication via header.
+
+**Headers:**
+- `X-API-Key` (required): The secret API key for authentication
+
+**Example Request:**
+```bash
+curl "http://localhost:5000/trigger/summaries/send" \
+  -H "X-API-Key: your-secret-key"
+```
+
+**Example Response:**
+- `200 OK`: Emails sent successfully
+- `400 Bad Request`: Invalid or missing API key
+
 ## 🧪 Testing
 
 Run the test suite:

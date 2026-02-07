@@ -150,7 +150,7 @@ class TestPostSummarizer(unittest.TestCase):
 
         mock_get_db.return_value = db_mock
         with patch.dict(os.environ, {'SENDING_KEY': '123'}):
-            response = self.app.get('/trigger/summaries/send?key=123')
+            response = self.app.get('/trigger/summaries/send', headers={'X-API-Key': '123'})
             self.assertEqual(200, response.status_code)
             summarizer_mock.get_latest_posts.assert_any_call("Elon")
             summarizer_mock.get_latest_posts.assert_any_call("Donald")

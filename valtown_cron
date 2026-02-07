@@ -1,7 +1,9 @@
 export async function triggerEmail(): Promise<void> {
-  const URL =
-    `https://bluesky-summarizer.fly.dev/trigger/summaries/send?key=${process.env.SENDING_KEY}`;
-  console.log(URL);
-  await fetch(URL);
+  const URL = "https://bluesky-summarizer.fly.dev/trigger/summaries/send";
+  await fetch(URL, {
+    headers: {
+      "X-API-Key": process.env.SENDING_KEY || ""
+    }
+  });
 }
 0 8 * * 1
