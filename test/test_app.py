@@ -17,6 +17,8 @@ class TestPostSummarizer(unittest.TestCase):
 
     @staticmethod
     def setup_mocks():
+        zenai_mock = MagicMock()
+        zenai_mock.chat.completions.create.choices[0].message.content = "Summary of posts"
         genai_mock = MagicMock()
         genai_mock.models.generate_content.return_value.text = "Summary of posts"
         bsky_mock = MagicMock()
@@ -33,7 +35,7 @@ class TestPostSummarizer(unittest.TestCase):
 
         mock_search_posts.posts = [mock_post1, mock_post2]
 
-        return genai_mock, bsky_mock
+        return genai_mock, bsky_mock, zenai_mock
 
     @staticmethod
     def setup_db_mock():
@@ -44,11 +46,11 @@ class TestPostSummarizer(unittest.TestCase):
         return db_mock
 
     def test_get_posts_with_mocks(self):
-        genai_mock, bsky_mock = self.setup_mocks()
+        genai_mock, bsky_mock, zenai_mock = self.setup_mocks()
 
         summarizer_test = PostSummarizer(genai_mock, bsky_mock)
         posts = summarizer_test.get_latest_posts("UCL")
-        summary = summarizer_test.call_ai(posts)
+        summary = summarizer_test.call_google_ai(posts)
 
         genai_mock.models.generate_content.assert_called_with(
             model='gemini-2.0-flash',
@@ -59,13 +61,18 @@ class TestPostSummarizer(unittest.TestCase):
     def test_env_variables(self):
         genai_mock = MagicMock()
         bsky_mock = MagicMock()
+        zenai_mock = MagicMock()
 
         with self.assertRaises(ValueError) as context:
-            PostSummarizer(None, bsky_mock)
+            PostSummarizer(genai_mock, bsky_mock, None)
+        self.assertEqual(str(context.exception), "ZENAIKEY environment variable is not set")
+
+        with self.assertRaises(ValueError) as context:
+            PostSummarizer(None, bsky_mock, zenai_mock)
         self.assertEqual(str(context.exception), "GENAIKEY environment variable is not set")
 
         with self.assertRaises(ValueError) as context:
-            PostSummarizer(genai_mock, None)
+            PostSummarizer(genai_mock, None, zenai_mock)
         self.assertEqual(str(context.exception), "BSKYLOGIN environment variable is not set")
 
     def test_ai_not_called_without_posts(self):
@@ -75,12 +82,12 @@ class TestPostSummarizer(unittest.TestCase):
         mock_search_posts.posts = []
         summarizer_test = PostSummarizer(genai_mock, bsky_mock)
         posts = summarizer_test.get_latest_posts("UCL")
-        summarizer_test.call_ai(posts)
+        summarizer_test.call_google_ai(posts)
 
         genai_mock.models.generate_response.assert_not_called()
 
     def test_ai_call_retried_when_error(self):
-        genai_mock, bsky_mock = self.setup_mocks()
+        genai_mock, bsky_mock, zenai_mock = self.setup_mocks()
 
         genai_mock.models.generate_content.side_effect = [
             ServerError(code=502, response_json=MagicMock(), response=""),
@@ -89,15 +96,15 @@ class TestPostSummarizer(unittest.TestCase):
 
         summarizer_test = PostSummarizer(genai_mock, bsky_mock)
         posts = summarizer_test.get_latest_posts("UCL")
-        summary = summarizer_test.call_ai(posts)
+        summary = summarizer_test.call_google_ai(posts)
 
         self.assertEqual(genai_mock.models.generate_content.call_count, 2)
         self.assertEqual(summary, "Summary of posts")
 
     @patch('routes.get_summarizer')
     def test_json_response(self, mock_get_summarizer):
-        genai_mock, bsky_mock = self.setup_mocks()
-        mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock)
+        genai_mock, bsky_mock, zenai_mock = self.setup_mocks()
+        mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock, zenai_mock)
 
         response = self.app.get('/summary/Elon%20Musk')
         data = json.loads(response.data)
@@ -107,7 +114,7 @@ class TestPostSummarizer(unittest.TestCase):
     @patch('routes.get_summarizer')
     @patch('routes.get_db')
     def test_register_new_topic_wrong_input(self, mock_get_db, mock_get_summarizer):
-        genai_mock, bsky_mock = self.setup_mocks()
+        genai_mock, bsky_mock, zenai_mock = self.setup_mocks()
         db_mock = self.setup_db_mock()
         mock_get_db.return_value = db_mock
         mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock)
@@ -120,7 +127,7 @@ class TestPostSummarizer(unittest.TestCase):
     @patch('routes.get_summarizer')
     @patch('routes.get_db')
     def test_register_new_topic(self, mock_get_db, mock_get_summarizer):
-        genai_mock, bsky_mock = self.setup_mocks()
+        genai_mock, bsky_mock, zenai_mock = self.setup_mocks()
         db_mock = self.setup_db_mock()
         mock_get_db.return_value = db_mock
         mock_get_summarizer.return_value = PostSummarizer(genai_mock, bsky_mock)

@@ -2,16 +2,22 @@ from retry import retry
 import os
 from atproto import Client
 from google import genai
+from openai import OpenAI
 from atproto_client.models.app.bsky.feed.search_posts import Params
-
-
-
 
 
 class PostSummarizer:
     Elon_Musk = "Elon Musk"
 
-    def __init__(self, genai_client=None, bsky_client=None):
+    def __init__(self, genai_client=None, bsky_client=None, openai_client=None):
+        zenai_key = os.environ.get('ZENAIKEY')
+        if not zenai_key and not openai_client:
+            raise ValueError("ZENAIKEY environment variable is not set")
+        self.openai_client = openai_client or OpenAI(
+            api_key=zenai_key,
+            base_url="https://opencode.ai/zen/v1",
+        )
+
         genai_key = os.environ.get('GENAIKEY')
         if not genai_key and not genai_client:
             raise ValueError("GENAIKEY environment variable is not set")
@@ -40,10 +46,23 @@ class PostSummarizer:
         return latest_day_posts
 
     @retry(tries=3, delay=3, backoff=2)  # retry after 3 and 6 seconds
-    def call_ai(self, latest_posts):
+    def call_google_ai(self, latest_posts):
         print("calling ai...")
         ai_prompt = "summarize these posts: "
         reply = self.genai_client.models.generate_content(
             model="gemini-2.0-flash", contents=f"{ai_prompt} {latest_posts}"
         )
         return reply.text
+
+    @retry(tries=3, delay=3, backoff=2)
+    def call_zen_ai(self, latest_posts):
+
+        ai_prompt = "summarize these posts: "  # input("Action: ")
+        response = self.openai_client.chat.completions.create(
+            model="big-pickle",
+            messages=[
+                {"role": "user", "content": f"{ai_prompt} {latest_posts}"}
+            ],
+        )
+
+        return response.choices[0].message.content

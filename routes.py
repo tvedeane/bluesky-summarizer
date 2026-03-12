@@ -66,7 +66,7 @@ def get_summary(topic):
     summarizer = get_summarizer()
     posts = summarizer.get_latest_posts(topic)
     if len(posts) > 0:
-        summary = summarizer.call_ai(posts)
+        summary = summarizer.call_zen_ai(posts)
     else:
         summary = "No posts have been found on this subject of matter"
     return summary
