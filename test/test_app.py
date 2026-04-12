@@ -4,10 +4,12 @@ import unittest
 from unittest.mock import MagicMock, patch
 import json
 
+import pytest as pytest
 from google.genai.errors import ServerError
 
 from bluesky_summarizer import app
 from post_summarizer import PostSummarizer
+from routes import register_new_topic
 
 
 class TestPostSummarizer(unittest.TestCase):
@@ -116,6 +118,18 @@ class TestPostSummarizer(unittest.TestCase):
         self.assertEqual("Summary of posts", data["summary"])
         self.assertEqual("Elon Musk", data["topic"])
 
+    def test_topic_too_long(self):
+        with self.assertRaises(ValueError) as context:
+            register_new_topic("", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        self.assertEqual(str(context.exception), "Topic must be 40 characters or fewer.")
+
+    def test_topic_invalid_characters(self):
+        for s in ["%elon", "$elon", "(Ronaldo)", "?Neymar"]:
+            with self.subTest(s=s):
+                with self.assertRaises(ValueError) as context:
+                    register_new_topic("", s)
+                self.assertEqual(str(context.exception), "Topic contains invalid characters.")
+
     @patch('routes.get_summarizer')
     @patch('routes.get_db')
     def test_register_new_topic_wrong_input(self, mock_get_db, mock_get_summarizer):
@@ -166,9 +180,8 @@ class TestPostSummarizer(unittest.TestCase):
             self.assertEqual(200, response.status_code)
             summarizer_mock.get_latest_posts.assert_any_call("Elon")
             summarizer_mock.get_latest_posts.assert_any_call("Donald")
-            #assert call ai
+            # assert call ai
             mail_sender_mock.send_mail.assert_any_call(
                 "john@gmail.com", "No posts have been found on this subject of matter", "Elon")
             mail_sender_mock.send_mail.assert_any_call(
                 "Joe@gmail.com", "No posts have been found on this subject of matter", "Donald")
-

@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, make_response, request, g
 from flask_cors import CORS
 import os
+import re
 
 from post_summarizer import PostSummarizer
 from database import Database
@@ -31,7 +32,23 @@ def get_summarizer():
     return g.summarizer
 
 
+TOPIC_MAX_LENGTH = 40
+ALLOWED_TOPIC_PATTERN = re.compile(r'^[\w \-#+@.]+$')
+
+
+def sanitize_topic(topic: str) -> str:
+    if not topic or not isinstance(topic, str):
+        raise ValueError("Topic must be a non-empty string.")
+    topic = topic.strip()
+    if len(topic) > TOPIC_MAX_LENGTH:
+        raise ValueError(f"Topic must be {TOPIC_MAX_LENGTH} characters or fewer.")
+    if not ALLOWED_TOPIC_PATTERN.match(topic):
+        raise ValueError("Topic contains invalid characters.")
+    return topic
+
+
 def register_new_topic(email, topic):
+    topic = sanitize_topic(topic)
     if get_db().topic_already_followed(email, topic):
         return jsonify(message="You cannot follow the same topic twice"), 400
     if get_db().save_topic(email, topic):
