@@ -65,7 +65,6 @@ class PostSummarizer:
             f"<posts>\n{posts_block}\n</posts>\n\n"
             "Provide a neutral summary of these posts."
         )
-        print(prompt)
         response = self.openai_client.chat.completions.create(
             model="big-pickle",
             messages=[

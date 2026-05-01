@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, make_response, request, g
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 import os
 import re
@@ -13,23 +13,30 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+_summarizer_instance = None
+_db_instance = None
+_mail_sender_instance = None
+
 
 def get_mail_sender():
-    if 'mail_sender' not in g:
-        g.mail_sender = MailSender()
-    return g.mail_sender
+    global _mail_sender_instance
+    if _mail_sender_instance is None:
+        _mail_sender_instance = MailSender()
+    return _mail_sender_instance
 
 
 def get_db():
-    if 'db' not in g:
-        g.db = Database()
-    return g.db
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = Database()
+    return _db_instance
 
 
 def get_summarizer():
-    if 'summarizer' not in g:
-        g.summarizer = PostSummarizer()
-    return g.summarizer
+    global _summarizer_instance
+    if _summarizer_instance is None:
+        _summarizer_instance = PostSummarizer()
+    return _summarizer_instance
 
 
 TOPIC_MAX_LENGTH = 40
