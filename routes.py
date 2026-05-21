@@ -1,3 +1,5 @@
+import secrets
+
 from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 import os
@@ -99,7 +101,7 @@ def get_summary(topic):
 @app.route("/trigger/summaries/send")
 def send_summaries():
     key = request.headers.get('X-API-Key')
-    if key != os.environ.get('SENDING_KEY'):
+    if not secrets.compare_digest(os.environ.get('SENDING_KEY'), key):
         return make_response("invalid key", 400)
     for entry in get_db().get_users():
         summary = get_summary(entry[1])
